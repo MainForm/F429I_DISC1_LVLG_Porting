@@ -43,6 +43,7 @@ add_subdirectory(cmake/stm32cubemx)
 
 add_subdirectory(Drivers/SDRAM)
 add_subdirectory(Drivers/ILI9341)
+add_subdirectory(Drivers/STMPE811)
 
 set(LV_BUILD_CONF_PATH Middlewares/LVGL/Inc/lv_conf.h)
 add_subdirectory(Middlewares/LVGL/lvgl)
@@ -87,4 +88,6 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     
     sdramIS42S16400J
     ili9341
+
+    stmpe811
 )

@@ -4,3 +4,6 @@
 [submodule "Drivers/ILI9341"]
 	path = Drivers/ILI9341
 	url = https://github.com/MainForm/STM32_ILI9341_Driver.git
+[submodule "Drivers/STMPE811"]
+	path = Drivers/STMPE811
+	url = https://github.com/MainForm/STM32_STMPE811_Driver.git

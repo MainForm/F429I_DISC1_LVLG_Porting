@@ -8,10 +8,13 @@
 #include "spi.h"
 #include "ltdc.h"
 #include "dma2d.h"
-#include <benchmark/lv_demo_benchmark.h>
+#include "i2c.h"
+#include <src/indev/lv_indev.h>
 #include <widgets/lv_demo_widgets.h>
 
 static lv_display_t* disp_ili9241 = nullptr;
+static lv_indev_t* indev_stmpe811 = nullptr;
+
 
 TFT_LCD::ILI9341 lcd(
     TFT_LCD::ILI9341_Config{
@@ -22,6 +25,10 @@ TFT_LCD::ILI9341 lcd(
         .hltdc = &hltdc,
         .hdma2d = &hdma2d
     }
+);
+
+TFT_LCD::STMPE811 touchPanel(
+    &hi2c3
 );
 
 void display_direct_flush_cb(lv_display_t * display, const lv_area_t * area, uint8_t * px_map){
@@ -50,15 +57,8 @@ void display_direct_flush_cb(lv_display_t * display, const lv_area_t * area, uin
     lv_display_flush_ready(display);
 }
 
-extern "C"
-void mainTaskHandler(void *argument){
-    // Initializing the ILI9341 display via SPI protocol
-    lcd.initalize(reinterpret_cast<uint16_t*>(FRAME_BUFFER_ADDRESS));
 
-    // Initializing lvgl
-    lv_init();
-    lv_tick_set_cb(xTaskGetTickCount);
-
+void lv_init_display(){
     // setting the display resolution
     disp_ili9241 = lv_display_create(TFT_LCD::ILI9341::LCD_WIDTH, TFT_LCD::ILI9341::LCD_HEIGHT);
 
@@ -71,8 +71,45 @@ void mainTaskHandler(void *argument){
     );
 
     lv_display_set_flush_cb(disp_ili9241, display_direct_flush_cb);
+}
 
-    lv_demo_benchmark();
+void touch_read(lv_indev_t * indev, lv_indev_data_t * data){
+    if(touchPanel.isTouched()) {
+        touchPanel.getTouchedPoint((uint32_t*)&data->point.x, (uint32_t*)&data->point.y);
+
+        data->point.x *= (TFT_LCD::ILI9341::LCD_WIDTH / (float)TP_WIDTH);
+        data->point.y *= (TFT_LCD::ILI9341::LCD_HEIGHT / (float)TP_HEIGHT);
+
+        data->point.x = TFT_LCD::ILI9341::LCD_WIDTH - data->point.x;
+        data->point.y = TFT_LCD::ILI9341::LCD_HEIGHT - data->point.y;
+
+        data->state = LV_INDEV_STATE_PRESSED;
+    } else {
+        data->state = LV_INDEV_STATE_RELEASED;
+    }
+}
+
+void lv_init_indev(){
+    indev_stmpe811 = lv_indev_create();
+    lv_indev_set_type(indev_stmpe811, lv_indev_type_t::LV_INDEV_TYPE_POINTER);
+    lv_indev_set_read_cb(indev_stmpe811, touch_read);
+}
+
+extern "C"
+void mainTaskHandler(void *argument){
+    // Initializing the ILI9341 display via SPI protocol
+    lcd.initalize(reinterpret_cast<uint16_t*>(FRAME_BUFFER_ADDRESS));
+    touchPanel.initalize();
+
+    // Initializing lvgl
+    lv_init();
+    lv_tick_set_cb(xTaskGetTickCount);
+
+    lv_init_display();
+
+    lv_init_indev();
+
+    lv_demo_widgets();
     
     for(;;){
         lv_timer_handler();
