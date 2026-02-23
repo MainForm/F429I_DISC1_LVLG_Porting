@@ -1,3 +1,6 @@
 [submodule "Middlewares/LVGL/lvgl"]
 	path = Middlewares/LVGL/lvgl
 	url = https://github.com/lvgl/lvgl.git
+[submodule "Drivers/ILI9341"]
+	path = Drivers/ILI9341
+	url = https://github.com/MainForm/STM32_ILI9341_Driver.git
